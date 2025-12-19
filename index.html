@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Nexus Flow • Search & AI Intelligence</title>
+  <title>Nexus Flow • Deep Intelligence</title>
 
   <!-- ====== Styles ====== -->
   <style>
@@ -46,7 +46,7 @@
     main { 
       flex: 1; 
       display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); 
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
       gap: 30px; 
       padding: 30px; 
       max-width: 1800px;
@@ -81,6 +81,17 @@
     button.primary { background: var(--accent); color: #090b10; border: none; }
     button.primary:hover { filter: brightness(1.1); color: #000; }
     
+    /* Mini Button for Copy */
+    .btn-mini {
+        padding: 2px 6px;
+        font-size: 10px;
+        line-height: 1;
+        height: 20px;
+        width: auto;
+        flex: none;
+        min-width: 40px;
+    }
+
     /* SVG Pipes Layer */
     .pipes-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
     .flow-line { fill: none; stroke: var(--pipe); stroke-width: 3px; transition: stroke 0.5s, stroke-dashoffset 1s; }
@@ -112,6 +123,13 @@
     .result-meta { color: var(--ok); font-size: 10px; margin-bottom: 4px; }
     .result-snippet { color: var(--text-dim); font-size: 12px; line-height: 1.4; }
 
+    /* Refinement Buttons */
+    .refine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .btn-refine { text-align: left; font-size: 11px; padding: 8px; border: 1px solid var(--pipe-active); color: var(--pipe-active); background: rgba(98, 208, 255, 0.05); }
+    .btn-refine:hover { background: rgba(98, 208, 255, 0.15); }
+    .btn-link { border-color: var(--ok); color: var(--ok); background: rgba(48, 209, 88, 0.05); }
+    .btn-link:hover { background: rgba(48, 209, 88, 0.15); }
+
     /* Logs Drawer */
     #logs { position: fixed; bottom: 0; left: 0; right: 0; height: 200px; background: var(--panel); border-top: 1px solid var(--line); z-index: 200; display: flex; flex-direction: column; transition: transform 0.3s; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); }
     #logs.minimized { transform: translateY(165px); }
@@ -134,7 +152,7 @@
 <body>
 
 <header>
-  <h1><span>Nexus Flow</span> <span class="badge">Gateway & AI</span></h1>
+  <h1><span>Nexus Flow</span> <span class="badge">Deep Intelligence</span></h1>
   <div style="display:flex; gap:15px; align-items:center;">
     <div style="font-size:12px; color:var(--text-dim)">Dark Mode</div>
     <div id="themeToggle" class="switch on"></div>
@@ -156,7 +174,7 @@
       <div class="card-body">
         <div>
             <label>Search Query</label>
-            <input type="text" id="searchQuery" placeholder="e.g. latest typescript features">
+            <input type="text" id="searchQuery" placeholder="e.g. Bohus Bergsprängning AB">
         </div>
         
         <div class="btn-row">
@@ -185,14 +203,15 @@
       </div>
     </div>
 
-    <!-- Raw Data Preview (Optional) -->
+    <!-- Raw Data Preview -->
     <div class="card" style="flex:1">
       <div class="card-head">
         <span class="card-title">Raw Response</span>
-        <button style="width:auto; padding:2px 8px; font-size:10px" onclick="toggleRaw()">Toggle</button>
+        <button class="btn-mini" onclick="toggleRaw()">Toggle</button>
       </div>
       <div class="card-body" style="flex:1; overflow:hidden;">
-        <div id="rawOutput" class="preview-box" style="height:200px; display:none;">// Raw data hidden...</div>
+        <!-- Increased Height, No Truncation -->
+        <div id="rawOutput" class="preview-box" style="height:600px; display:none;">// Raw data hidden...</div>
       </div>
     </div>
   </div>
@@ -224,8 +243,8 @@
         </div>
 
         <div class="btn-row">
-            <button onclick="copyToClip('processedOutput')">Copy Results</button>
-            <button onclick="downloadResults()">Download JSON</button>
+            <button class="btn-mini" onclick="copyToClip('processedOutput')">Copy Results</button>
+            <button class="btn-mini" onclick="downloadResults()">Download JSON</button>
         </div>
       </div>
     </div>
@@ -251,11 +270,11 @@
           <div style="flex:1">
             <label>Model</label>
             <select id="groqModel">
-              <option value="openai/gpt-oss-120b">gpt-oss-120b</option>
-              <option value="llama-3.1-8b-instant" selected>llama-3.1-8b-instant</option>
+              <!-- Default set to openai/gpt-oss-120b -->
+              <option value="openai/gpt-oss-120b" selected>openai/gpt-oss-120b</option>
               <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+              <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
               <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
-              <option value="gemma2-9b-it">gemma2-9b-it</option>
             </select>
           </div>
           <div style="flex:1">
@@ -269,7 +288,8 @@
 
         <div>
           <label>Prompt Instruction</label>
-          <textarea id="groqPrompt" style="height:100px">Summarize the search results provided in the context. Focus on technical details and provide a concise list of key takeaways.</textarea>
+          <!-- Updated Default Prompt -->
+          <textarea id="groqPrompt" style="height:150px">These are results from a duckduckgo search. Summarize the search results provided in the context. Focus on technical details and provide a concise list of key takeaways. Output in json form Organisationsnummer, Adress, links for the website, social media (in array), nay contacts (in array phone numbers). Then three links you would suggest to follow up to get moreinformation tha tI need above. Of no searches are found realted to hte search "XXXXX" sugest alternative search.</textarea>
         </div>
 
         <button id="btnGroq" class="primary" disabled>Run Analysis</button>
@@ -284,14 +304,30 @@
     <!-- Groq Output -->
     <div class="card" style="flex:1">
       <div class="card-head">
-        <span class="card-title">AI Output</span>
-        <button style="width:auto; padding:2px 8px; font-size:10px" onclick="copyToClip('groqOutput')">Copy</button>
+        <span class="card-title">AI Output (JSON)</span>
+        <button class="btn-mini" onclick="copyToClip('groqOutput')">Copy</button>
       </div>
       <div class="card-body" style="flex:1; overflow:hidden;">
         <!-- SCROLLABLE OUTPUT -->
         <div id="groqOutput" class="preview-box" style="height:400px"></div>
       </div>
     </div>
+
+    <!-- STEP 4: STRATEGIC REFINEMENT -->
+    <div class="card" id="cardStep4" style="margin-top:20px; border-color: var(--accent);">
+        <div class="card-head" style="background: rgba(98, 208, 255, 0.1);">
+            <span class="card-title">4. Strategic Refinement</span>
+            <span class="badge">Next Steps</span>
+        </div>
+        <div class="card-body">
+            <div id="refinementArea">
+                <div style="text-align:center; color:var(--text-dim); padding:10px;">
+                    Analysis required to generate next steps.
+                </div>
+            </div>
+        </div>
+    </div>
+
   </div>
 </main>
 
@@ -309,12 +345,15 @@
  * APP STATE
  */
 const state = {
+    currentQuery: "",
     searchResults: [],
     rpmCount: 0,
     rpmStart: Date.now(),
     step1Done: false,
     step2Done: false,
-    step3Done: false
+    step3Done: false,
+    step4Done: false,
+    lastJsonAnalysis: null
 };
 
 const ui = {
@@ -330,6 +369,8 @@ const ui = {
     groqPrompt: document.getElementById('groqPrompt'),
     btnGroq: document.getElementById('btnGroq'),
     groqOutput: document.getElementById('groqOutput'),
+    
+    refinementArea: document.getElementById('refinementArea'),
     
     logs: document.getElementById('logBody'),
     flowSvg: document.getElementById('flowSvg')
@@ -410,6 +451,7 @@ function drawFlow() {
     const c1 = document.getElementById('cardStep1').getBoundingClientRect();
     const c2 = document.getElementById('cardStep2').getBoundingClientRect();
     const c3 = document.getElementById('cardStep3').getBoundingClientRect();
+    const c4 = document.getElementById('cardStep4').getBoundingClientRect();
     const main = document.querySelector('main').getBoundingClientRect();
     
     const getPos = (rect, side) => ({
@@ -429,6 +471,22 @@ function drawFlow() {
     createPath(getPos(c1, 'right'), getPos(c2, 'left'), state.step1Done ? 'done' : 'active');
     // 2 -> 3
     createPath(getPos(c2, 'right'), getPos(c3, 'left'), state.step2Done ? 'done' : 'active');
+    // 3 -> 4 (Vertical/Diagonal)
+    // We connect bottom of 3 to top of 4 roughly, or side to side if columns align
+    // Since it's a grid, let's assume flow is sequential.
+    // If 4 is below 3 in same col, simple line. If different col, curve.
+    // For simplicity, let's connect Step 3 Right to Step 4 Left (if layout permits) or just assume visual flow.
+    // Actually, let's connect Step 3 to Step 4 visually.
+    if(c4.top > c3.bottom) {
+        // Vertical connection
+        const p3b = { x: c3.left + c3.width/2 - main.left, y: c3.bottom - main.top };
+        const p4t = { x: c4.left + c4.width/2 - main.left, y: c4.top - main.top };
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const d = `M ${p3b.x} ${p3b.y} L ${p4t.x} ${p4t.y}`;
+        path.setAttribute("d", d);
+        path.setAttribute("class", `flow-line ${state.step3Done ? 'done' : 'active'}`);
+        svg.appendChild(path);
+    }
 }
 
 /**
@@ -438,6 +496,7 @@ ui.btnSearch.addEventListener('click', runSearch);
 
 async function runSearch() {
     const query = ui.searchQuery.value.trim();
+    state.currentQuery = query; // Store for Prompt Injection
     const mode = ui.searchMode.value;
     const rpm = parseInt(ui.rpmLimit.value);
 
@@ -460,7 +519,9 @@ async function runSearch() {
     state.step1Done = false;
     state.step2Done = false;
     state.step3Done = false;
+    state.step4Done = false;
     ui.btnGroq.disabled = true;
+    ui.refinementArea.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:10px;">Analysis required to generate next steps.</div>';
     drawFlow();
 
     ui.btnSearch.disabled = true;
@@ -496,7 +557,9 @@ async function runSearch() {
 
         if(!responseText) throw new Error("All proxies failed");
 
-        ui.rawOutput.textContent = responseText.substring(0, 2000) + "... (truncated)";
+        // NO TRUNCATION HERE
+        ui.rawOutput.textContent = responseText;
+        
         setProgress(1, 100, "Done");
         state.step1Done = true;
         
@@ -566,7 +629,7 @@ function processResults(raw, mode, query) {
         } catch(e) { log("JSON Parse Error", "ERR"); }
     }
 
-    // CLEANING LOGIC (The "Module Step")
+    // CLEANING LOGIC
     state.searchResults = results.map(r => {
         let cleanUrl = r.url;
         
@@ -580,7 +643,6 @@ function processResults(raw, mode, query) {
         }
 
         // 2. Strip Tracking Params (&rut=...)
-        // Remove &rut=... until the end of string or next &
         cleanUrl = cleanUrl.replace(/&rut=[^&]*/, '');
         
         return { ...r, url: cleanUrl };
@@ -635,18 +697,51 @@ ui.btnGroq.addEventListener('click', async () => {
     setProgress(3, 10, "Preparing Context...");
     
     const model = ui.groqModel.value;
-    const prompt = ui.groqPrompt.value;
+    let promptTemplate = ui.groqPrompt.value;
     const useProxy = document.getElementById('corsToggle').classList.contains('on');
 
+    // INJECT QUERY INTO PROMPT
+    const finalPrompt = promptTemplate.replace("XXXXX", state.currentQuery);
+
     // Prepare Context from Search Results
-    const context = state.searchResults.slice(0, 10).map(r => 
+    const context = state.searchResults.slice(0, 15).map(r => 
         `Title: ${r.title}\nURL: ${r.url}\nSnippet: ${r.snippet}`
     ).join("\n\n");
 
+    // STRICT SCHEMA DEFINITION
+    const jsonSchema = {
+        "Organisationsnummer": "string or null",
+        "Adress": "string or null",
+        "Website": "string or null",
+        "WebsiteFound": "boolean",
+        "SocialMedia": ["url string"],
+        "Contacts": [
+            { "Name": "string or null", "Phone": "string or null", "Email": "string or null" }
+        ],
+        "SuggestedFollowUpLinks": [
+            { "URL": "string", "Type": "Official/Financial/Contact", "Reason": "string" }
+        ],
+        "ConfidenceScores": {
+            "Organisationsnummer": "number 0-1",
+            "Adress": "number 0-1",
+            "Contacts": "number 0-1"
+        },
+        "OverallConfidence": "number 0-1",
+        "SatisfactionScore": "number 0-1",
+        "AlternativeSearchTerms": ["string"],
+        "KeyTakeaways": ["string"]
+    };
+
     const messages = [
-        { role: "system", content: "You are an intelligent analyst. Use the provided search results to answer the user's request." },
+        { 
+            role: "system", 
+            content: `You are an intelligent analyst. You MUST output valid JSON only. 
+            Strictly follow this JSON schema structure: ${JSON.stringify(jsonSchema)}. 
+            If specific data is missing (like Name in Contacts), use null. 
+            If no results are found for the query, set OverallConfidence to 0 and suggest AlternativeSearchTerms.` 
+        },
         { role: "user", content: `SEARCH RESULTS CONTEXT:\n${context}` },
-        { role: "user", content: `USER INSTRUCTION:\n${prompt}` }
+        { role: "user", content: `USER INSTRUCTION:\n${finalPrompt}` }
     ];
 
     try {
@@ -665,8 +760,9 @@ ui.btnGroq.addEventListener('click', async () => {
             body: JSON.stringify({
                 model: model,
                 messages: messages,
-                temperature: 0.7,
-                max_tokens: 2048
+                temperature: 0.1, // Low temp for JSON adherence
+                max_tokens: 4096,
+                response_format: { type: "json_object" }
             })
         });
 
@@ -675,8 +771,17 @@ ui.btnGroq.addEventListener('click', async () => {
         const data = await res.json();
         const content = data.choices[0].message.content;
 
+        // Display JSON
         ui.groqOutput.textContent = content;
         
+        // Parse for Module 4
+        try {
+            state.lastJsonAnalysis = JSON.parse(content);
+            renderRefinementOptions(state.lastJsonAnalysis);
+        } catch(e) {
+            log("Failed to parse AI JSON for refinement.", "WARN");
+        }
+
         setProgress(3, 100, "Analysis Complete");
         log("Groq Analysis Finished", "SUCCESS");
         state.step3Done = true;
@@ -690,6 +795,77 @@ ui.btnGroq.addEventListener('click', async () => {
         ui.btnGroq.disabled = false;
     }
 });
+
+/**
+ * MODULE 4: STRATEGIC REFINEMENT
+ */
+function renderRefinementOptions(json) {
+    const container = ui.refinementArea;
+    container.innerHTML = '';
+
+    // 1. Confidence Display
+    const conf = json.OverallConfidence || 0;
+    const sat = json.SatisfactionScore || 0;
+    const confColor = conf > 0.7 ? 'var(--ok)' : (conf > 0.4 ? 'var(--warn)' : 'var(--err)');
+    
+    const statsDiv = document.createElement('div');
+    statsDiv.style.marginBottom = '15px';
+    statsDiv.innerHTML = `
+        <div style="display:flex; gap:15px; justify-content:center; font-size:12px;">
+            <div>Confidence: <strong style="color:${confColor}">${(conf*100).toFixed(0)}%</strong></div>
+            <div>Satisfaction: <strong>${(sat*100).toFixed(0)}%</strong></div>
+        </div>
+    `;
+    container.appendChild(statsDiv);
+
+    // 2. Alternative Searches
+    if (json.AlternativeSearchTerms && json.AlternativeSearchTerms.length > 0) {
+        const label = document.createElement('label');
+        label.textContent = "Refine Search (Low Confidence / Alternatives)";
+        container.appendChild(label);
+        
+        const grid = document.createElement('div');
+        grid.className = 'refine-grid';
+        
+        json.AlternativeSearchTerms.forEach(term => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-refine';
+            btn.innerHTML = `<span>🔍</span> ${escapeHtml(term)}`;
+            btn.onclick = () => {
+                ui.searchQuery.value = term;
+                runSearch();
+            };
+            grid.appendChild(btn);
+        });
+        container.appendChild(grid);
+    }
+
+    // 3. Follow Up Links (Scrape/Open)
+    if (json.SuggestedFollowUpLinks && json.SuggestedFollowUpLinks.length > 0) {
+        const label = document.createElement('label');
+        label.textContent = "Deep Dive (Suggested Sources)";
+        label.style.marginTop = "15px";
+        container.appendChild(label);
+        
+        const grid = document.createElement('div');
+        grid.className = 'refine-grid';
+        
+        json.SuggestedFollowUpLinks.forEach(linkObj => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-refine btn-link';
+            btn.innerHTML = `<span>🔗</span> ${escapeHtml(linkObj.Type || 'Link')}`;
+            btn.title = linkObj.Reason || linkObj.URL;
+            btn.onclick = () => {
+                window.open(linkObj.URL, '_blank');
+            };
+            grid.appendChild(btn);
+        });
+        container.appendChild(grid);
+    }
+    
+    state.step4Done = true;
+    drawFlow();
+}
 
 function escapeHtml(text) {
     if (!text) return '';
