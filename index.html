@@ -207,11 +207,11 @@
     <div class="card" style="flex:1">
       <div class="card-head">
         <span class="card-title">Raw Response</span>
-        <button class="btn-mini" onclick="toggleRaw()">Toggle</button>
+        <!-- Toggle button removed as requested -->
       </div>
       <div class="card-body" style="flex:1; overflow:hidden;">
-        <!-- Increased Height, No Truncation -->
-        <div id="rawOutput" class="preview-box" style="height:600px; display:none;">// Raw data hidden...</div>
+        <!-- Always Visible, No Truncation -->
+        <div id="rawOutput" class="preview-box" style="height:600px; display:block;">// Raw data will appear here...</div>
       </div>
     </div>
   </div>
@@ -288,7 +288,7 @@
 
         <div>
           <label>Prompt Instruction</label>
-          <!-- Updated Default Prompt -->
+          <!-- Updated Default Prompt with XXXXX placeholder -->
           <textarea id="groqPrompt" style="height:150px">These are results from a duckduckgo search. Summarize the search results provided in the context. Focus on technical details and provide a concise list of key takeaways. Output in json form Organisationsnummer, Adress, links for the website, social media (in array), nay contacts (in array phone numbers). Then three links you would suggest to follow up to get moreinformation tha tI need above. Of no searches are found realted to hte search "XXXXX" sugest alternative search.</textarea>
         </div>
 
@@ -430,11 +430,6 @@ function setProgress(step, pct, text) {
     if(stat && text) stat.textContent = text;
 }
 
-function toggleRaw() {
-    const el = ui.rawOutput;
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
 window.copyToClip = (id) => {
     const txt = document.getElementById(id).innerText;
     navigator.clipboard.writeText(txt);
@@ -471,14 +466,8 @@ function drawFlow() {
     createPath(getPos(c1, 'right'), getPos(c2, 'left'), state.step1Done ? 'done' : 'active');
     // 2 -> 3
     createPath(getPos(c2, 'right'), getPos(c3, 'left'), state.step2Done ? 'done' : 'active');
-    // 3 -> 4 (Vertical/Diagonal)
-    // We connect bottom of 3 to top of 4 roughly, or side to side if columns align
-    // Since it's a grid, let's assume flow is sequential.
-    // If 4 is below 3 in same col, simple line. If different col, curve.
-    // For simplicity, let's connect Step 3 Right to Step 4 Left (if layout permits) or just assume visual flow.
-    // Actually, let's connect Step 3 to Step 4 visually.
+    // 3 -> 4
     if(c4.top > c3.bottom) {
-        // Vertical connection
         const p3b = { x: c3.left + c3.width/2 - main.left, y: c3.bottom - main.top };
         const p4t = { x: c4.left + c4.width/2 - main.left, y: c4.top - main.top };
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -700,15 +689,15 @@ ui.btnGroq.addEventListener('click', async () => {
     let promptTemplate = ui.groqPrompt.value;
     const useProxy = document.getElementById('corsToggle').classList.contains('on');
 
-    // INJECT QUERY INTO PROMPT
-    const finalPrompt = promptTemplate.replace("XXXXX", state.currentQuery);
+    // 1. INJECT QUERY INTO PROMPT (Replace XXXXX)
+    const finalPrompt = promptTemplate.replace(/XXXXX/g, state.currentQuery);
 
     // Prepare Context from Search Results
     const context = state.searchResults.slice(0, 15).map(r => 
         `Title: ${r.title}\nURL: ${r.url}\nSnippet: ${r.snippet}`
     ).join("\n\n");
 
-    // STRICT SCHEMA DEFINITION
+    // 2. STRICT SCHEMA DEFINITION
     const jsonSchema = {
         "Organisationsnummer": "string or null",
         "Adress": "string or null",
@@ -716,18 +705,24 @@ ui.btnGroq.addEventListener('click', async () => {
         "WebsiteFound": "boolean",
         "SocialMedia": ["url string"],
         "Contacts": [
-            { "Name": "string or null", "Phone": "string or null", "Email": "string or null" }
+            { 
+                "Name": "string or null", 
+                "Phone": "string or null", 
+                "Email": "string or null",
+                "Role": "string or null"
+            }
         ],
         "SuggestedFollowUpLinks": [
             { "URL": "string", "Type": "Official/Financial/Contact", "Reason": "string" }
         ],
         "ConfidenceScores": {
-            "Organisationsnummer": "number 0-1",
-            "Adress": "number 0-1",
-            "Contacts": "number 0-1"
+            "Organisationsnummer": "number 0.0-1.0",
+            "Adress": "number 0.0-1.0",
+            "Contacts": "number 0.0-1.0",
+            "Website": "number 0.0-1.0"
         },
-        "OverallConfidence": "number 0-1",
-        "SatisfactionScore": "number 0-1",
+        "OverallConfidence": "number 0.0-1.0",
+        "SatisfactionScore": "number 0.0-1.0",
         "AlternativeSearchTerms": ["string"],
         "KeyTakeaways": ["string"]
     };
@@ -735,7 +730,8 @@ ui.btnGroq.addEventListener('click', async () => {
     const messages = [
         { 
             role: "system", 
-            content: `You are an intelligent analyst. You MUST output valid JSON only. 
+            content: `You are an intelligent data extraction analyst. 
+            You MUST output valid JSON only. 
             Strictly follow this JSON schema structure: ${JSON.stringify(jsonSchema)}. 
             If specific data is missing (like Name in Contacts), use null. 
             If no results are found for the query, set OverallConfidence to 0 and suggest AlternativeSearchTerms.` 
